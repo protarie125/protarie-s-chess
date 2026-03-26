@@ -122,10 +122,58 @@ function isQueenMoveLegal(fromFile, fromRank, toFile, toRank) {
         isRookMoveLegal(fromFile, fromRank, toFile, toRank);
 }
 
-function isKingMoveLegal(fromFile, fromRank, toFile, toRank) {
-    const fileDiff = Math.abs(toFile - fromFile);
+function isKingMoveLegal(fromFile, fromRank, toFile, toRank, isBlack) {
+    const fileDiff = toFile - fromFile;
     const rankDiff = Math.abs(toRank - fromRank);
-    return fileDiff <= 1 && rankDiff <= 1 && !(fileDiff === 0 && rankDiff === 0);
+
+    // 通常の1マス移動
+    if (Math.abs(fileDiff) <= 1 && rankDiff <= 1 && !(fileDiff === 0 && rankDiff === 0)) {
+        return !isInCheck_afterMove(fromFile, fromRank, toFile, toRank, isBlack);
+    }
+
+    // キャスリング
+    const kingSquare = boardState[fromRank][fromFile];
+    if (!kingSquare || kingSquare.piece.pieceData.hasMoved) return false;
+    if (rankDiff !== 0) return false;
+
+    // キングサイド（右、file+2）
+    if (fileDiff === 2) {
+        const rook = boardState[fromRank][7];
+        if (!rook || rook.type !== 'R' || rook.piece.pieceData.hasMoved) return false;
+        if (boardState[fromRank][5] || boardState[fromRank][6]) return false;
+        if (isInCheck(isBlack)) return false;
+        if (isInCheck_afterMove(fromFile, fromRank, fromFile + 1, fromRank, isBlack)) return false;
+        if (isInCheck_afterMove(fromFile, fromRank, fromFile + 2, fromRank, isBlack)) return false;
+        return true;
+    }
+
+    // クイーンサイド（左、file-2）
+    if (fileDiff === -2) {
+        const rook = boardState[fromRank][0];
+        if (!rook || rook.type !== 'R' || rook.piece.pieceData.hasMoved) return false;
+        if (boardState[fromRank][1] || boardState[fromRank][2] || boardState[fromRank][3]) return false;
+        if (isInCheck(isBlack)) return false;
+        if (isInCheck_afterMove(fromFile, fromRank, fromFile - 1, fromRank, isBlack)) return false;
+        if (isInCheck_afterMove(fromFile, fromRank, fromFile - 2, fromRank, isBlack)) return false;
+        return true;
+    }
+
+    return false;
+}
+
+function isInCheck_afterMove(fromFile, fromRank, toFile, toRank, isBlack) {
+    // 仮に盤面を変更
+    const original = boardState[toRank][toFile];
+    boardState[toRank][toFile] = boardState[fromRank][fromFile];
+    boardState[fromRank][fromFile] = null;
+
+    const result = isInCheck(isBlack);
+
+    // 元に戻す
+    boardState[fromRank][fromFile] = boardState[toRank][toFile];
+    boardState[toRank][toFile] = original;
+
+    return result;
 }
 
 function isMoveLegal(fromFile, fromRank, toFile, toRank, piece) {
@@ -142,7 +190,7 @@ function isMoveLegal(fromFile, fromRank, toFile, toRank, piece) {
         case 'B': return isBishopMoveLegal(fromFile, fromRank, toFile, toRank);
         case 'R': return isRookMoveLegal(fromFile, fromRank, toFile, toRank);
         case 'Q': return isQueenMoveLegal(fromFile, fromRank, toFile, toRank);
-        case 'K': return isKingMoveLegal(fromFile, fromRank, toFile, toRank);
+        case 'K': return isKingMoveLegal(fromFile, fromRank, toFile, toRank, piece.pieceData.isBlack);
         default: return false;
     }
 }
@@ -201,7 +249,8 @@ function createPiece(scene, file, rank, type, isBlack) {
         file: file,
         rank: rank,
         type: type,
-        isBlack: isBlack
+        isBlack: isBlack,
+        hasMoved: false
     };
 
     pieceContainer.setInteractive(
@@ -286,6 +335,19 @@ function movePiece(targetFile, targetRank) {
     selectedPiece.x = boardStartX + targetFile * SQUARE_SIZE + SQUARE_SIZE / 2;
     selectedPiece.y = boardStartY + targetRank * SQUARE_SIZE + SQUARE_SIZE / 2;
 
+    // キャスリング処理
+    if (type === 'K' && Math.abs(targetFile - file) === 2) {
+        const rookFromFile = targetFile > file ? 7 : 0;
+        const rookToFile = targetFile > file ? 5 : 3;
+
+        const rookSquare = boardState[rank][rookFromFile];
+        if (rookSquare) {
+            rookSquare.piece.pieceData.file = rookToFile;
+            rookSquare.piece.pieceData.hasMoved = true;
+            rookSquare.piece.x = boardStartX + rookToFile * SQUARE_SIZE + SQUARE_SIZE / 2;
+        }
+    }
+
     updateBoardState();
 
     lastMove = {
@@ -295,6 +357,7 @@ function movePiece(targetFile, targetRank) {
     };
 
     isWhiteTurn = !isWhiteTurn;
+    selectedPiece.pieceData.hasMoved = true;
     deselectPiece();
 }
 
@@ -373,8 +436,23 @@ function setupPieceDragEvents(scene) {
                     gameObject.pieceData.rank = targetRank;
                     gameObject.x = boardStartX + targetFile * SQUARE_SIZE + SQUARE_SIZE / 2;
                     gameObject.y = boardStartY + targetRank * SQUARE_SIZE + SQUARE_SIZE / 2;
+
+                    // キャスリング処理
+                    if (type === 'K' && Math.abs(targetFile - file) === 2) {
+                        const rookFromFile = targetFile > file ? 7 : 0;
+                        const rookToFile = targetFile > file ? 5 : 3;
+
+                        const rookSquare = boardState[rank][rookFromFile];
+                        if (rookSquare) {
+                            rookSquare.piece.pieceData.file = rookToFile;
+                            rookSquare.piece.pieceData.hasMoved = true;
+                            rookSquare.piece.x = boardStartX + rookToFile * SQUARE_SIZE + SQUARE_SIZE / 2;
+                        }
+                    }
+
                     updateBoardState();
                     isWhiteTurn = !isWhiteTurn;
+                    selectedPiece.pieceData.hasMoved = true;
                 } else {
                     gameObject.x = originalX;
                     gameObject.y = originalY;
@@ -446,7 +524,7 @@ function isInCheck(isBlack) {
             }
         }
     }
-    
+
     // 相手の全駒がキングに移動できるか確認
     for (let rank = 0; rank < 8; rank++) {
         for (let file = 0; file < 8; file++) {
@@ -458,6 +536,6 @@ function isInCheck(isBlack) {
             }
         }
     }
-    
+
     return false;
 }
