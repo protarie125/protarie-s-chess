@@ -433,3 +433,31 @@ function initializePieces(scene) {
         }
     }
 }
+
+function isInCheck(isBlack) {
+    // 自分のキングの位置を探す
+    let kingFile, kingRank;
+    for (let rank = 0; rank < 8; rank++) {
+        for (let file = 0; file < 8; file++) {
+            const square = boardState[rank][file];
+            if (square && square.type === 'K' && square.isBlack === isBlack) {
+                kingFile = file;
+                kingRank = rank;
+            }
+        }
+    }
+    
+    // 相手の全駒がキングに移動できるか確認
+    for (let rank = 0; rank < 8; rank++) {
+        for (let file = 0; file < 8; file++) {
+            const square = boardState[rank][file];
+            if (square && square.isBlack !== isBlack) {
+                if (isMoveLegal(file, rank, kingFile, kingRank, square.piece)) {
+                    return true;
+                }
+            }
+        }
+    }
+    
+    return false;
+}

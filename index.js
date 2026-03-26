@@ -41,7 +41,8 @@ function create() {
     });
 
     this.events.on('update', () => {
-        turnText.setText('Turn: ' + (isWhiteTurn ? 'White' : 'Black'));
+        turnText.setText('Turn: ' + (isWhiteTurn ? 'White' : 'Black') +
+            (isInCheck(!isWhiteTurn) ? '  CHECK!' : ''));
     });
 }
 
