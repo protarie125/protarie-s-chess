@@ -26,24 +26,15 @@ const config = {
 
 const game = new Phaser.Game(config);
 
-/**
- * シーン作成時の処理
- */
 function create() {
-    // チェス盤を作成
     createBoard(this);
-    
-    // 駒を初期配置
     initializePieces(this);
-    
-    // 駒のドラッグイベントをセットアップ
+    updateBoardState();
+    setupPieceClickEvents(this);
     setupPieceDragEvents(this);
+    setupSquareClickEvents(this);
 }
 
-/**
- * 毎フレーム実行される処理
- */
 function update() {
-    // ゲームループ
 }
 
