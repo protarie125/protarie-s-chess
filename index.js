@@ -33,6 +33,16 @@ function create() {
     setupPieceClickEvents(this);
     setupPieceDragEvents(this);
     setupSquareClickEvents(this);
+
+    // デバッグ表示
+    const turnText = this.add.text(16, 16, 'Turn: White', {
+        font: 'bold 18px Arial',
+        fill: '#FFFFFF'
+    });
+
+    this.events.on('update', () => {
+        turnText.setText('Turn: ' + (isWhiteTurn ? 'White' : 'Black'));
+    });
 }
 
 function update() {
