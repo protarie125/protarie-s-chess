@@ -40,3 +40,4 @@ function create() {
 function update() {
 }
 
+let stockfish = null;

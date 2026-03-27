@@ -357,6 +357,10 @@ function movePiece(targetFile, targetRank) {
     };
 
     isWhiteTurn = !isWhiteTurn;
+    if (!isWhiteTurn) {
+        askStockfish();
+    }
+
     selectedPiece.pieceData.hasMoved = true;
     deselectPiece();
 }
@@ -465,8 +469,12 @@ function setupPieceDragEvents(scene) {
                         toRank: targetRank
                     };
                     updateBoardState();
-                    updateBoardState();
+
                     isWhiteTurn = !isWhiteTurn;
+                    if (!isWhiteTurn) {
+                        askStockfish();
+                    }
+
                     gameObject.pieceData.hasMoved = true;
                 } else {
                     gameObject.x = originalX;
@@ -532,4 +540,72 @@ function isInCheck(isBlack) {
     }
 
     return false;
+}
+
+function generateFEN() {
+    let fen = '';
+
+    for (let rank = 0; rank < 8; rank++) {
+        let empty = 0;
+        for (let file = 0; file < 8; file++) {
+            const square = boardState[rank][file];
+            if (square) {
+                if (empty > 0) {
+                    fen += empty;
+                    empty = 0;
+                }
+                const letter = square.isBlack ? square.type.toLowerCase() : square.type;
+                fen += letter;
+            } else {
+                empty++;
+            }
+        }
+        if (empty > 0) fen += empty;
+        if (rank < 7) fen += '/';
+    }
+
+    // 手番
+    fen += isWhiteTurn ? ' w' : ' b';
+
+    // キャスリング権（簡易版）
+    fen += ' KQkq';
+
+    // en passant
+    fen += ' -';
+
+    // ハーフムーブ・フルムーブ（簡易版）
+    fen += ' 0 1';
+
+    return fen;
+}
+
+function executeStockfishMove(scene, move) {
+    // moveは "e2e4" 形式
+    const fromFile = move.charCodeAt(0) - 'a'.charCodeAt(0);
+    const fromRank = 8 - parseInt(move[1]);
+    const toFile = move.charCodeAt(2) - 'a'.charCodeAt(0);
+    const toRank = 8 - parseInt(move[3]);
+
+    updateBoardState();
+
+    const fromSquare = boardState[fromRank][fromFile];
+    if (!fromSquare) return;
+
+    const piece = fromSquare.piece;
+    selectedPiece = piece;
+    movePiece(toFile, toRank);
+}
+
+async function askStockfish() {
+    const fen = generateFEN();
+    const url = 'https://stockfish.online/api/s/v2.php?fen=' + encodeURIComponent(fen) + '&depth=12';
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.success && data.bestmove) {
+        const move = data.bestmove.split(' ')[1];
+        console.log('Stockfish move:', data.bestmove);
+        executeStockfishMove(game.scene.scenes[0], move);
+    }
 }
