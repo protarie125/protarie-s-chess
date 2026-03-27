@@ -30,9 +30,8 @@ function create() {
     createBoard(this);
     initializePieces(this);
     updateBoardState();
-    setupPieceClickEvents(this);
+    setupClickEvents(this);
     setupPieceDragEvents(this);
-    setupSquareClickEvents(this);
 
     // デバッグ表示
     const turnText = this.add.text(16, 16, 'Turn: White', {

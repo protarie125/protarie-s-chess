@@ -487,32 +487,6 @@ function setupPieceDragEvents(scene) {
     });
 }
 
-function setupPieceClickEvents(scene) {
-    scene.input.on('pointerdown', (pointer) => {
-        let clickedPiece = null;
-
-        for (let piece of pieces) {
-            const distance = Phaser.Math.Distance.Between(
-                pointer.x, pointer.y,
-                piece.x, piece.y
-            );
-
-            if (distance <= PIECE_BG_RADIUS) {
-                clickedPiece = piece;
-                break;
-            }
-        }
-
-        if (clickedPiece) {
-            if (selectedPiece === clickedPiece) {
-                deselectPiece();
-            } else {
-                selectPiece(scene, clickedPiece);
-            }
-        }
-    });
-}
-
 function clearHighlights() {
     highlightedSquares.forEach(highlight => {
         highlight.destroy();

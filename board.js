@@ -66,33 +66,46 @@ function createBoard(scene) {
     }
 }
 
-function setupSquareClickEvents(scene) {
+function setupClickEvents(scene) {
     scene.input.on('pointerdown', (pointer) => {
         const clickX = pointer.x;
         const clickY = pointer.y;
-        
+
         if (clickX < boardStartX || clickX > boardStartX + BOARD_PIXEL_SIZE ||
             clickY < boardStartY || clickY > boardStartY + BOARD_PIXEL_SIZE) {
             return;
         }
-        
-        let onPiece = false;
+
+        // 駒の上かどうか確認
+        let clickedPiece = null;
         for (let piece of pieces) {
             const distance = Phaser.Math.Distance.Between(clickX, clickY, piece.x, piece.y);
             if (distance <= PIECE_BG_RADIUS) {
-                onPiece = true;
+                clickedPiece = piece;
                 break;
             }
         }
-        
-        if (onPiece) return;
-        
-        const file = Math.floor((clickX - boardStartX) / SQUARE_SIZE);
-        const rank = Math.floor((clickY - boardStartY) / SQUARE_SIZE);
-        
-        if (selectedPiece) {
-            movePiece(file, rank);
+
+        if (clickedPiece) {
+            if (selectedPiece && selectedPiece !== clickedPiece) {
+                // 選択中に別の駒をクリック→相手駒なら移動、自駒なら選択替え
+                const { file, rank } = clickedPiece.pieceData;
+                movePiece(file, rank); // 相手駒なら取る、自駒ならmovePiece内で弾かれる
+                if (selectedPiece) { // movePieceで移動できなかった場合は選択替え
+                    selectPiece(scene, clickedPiece);
+                }
+            } else if (selectedPiece === clickedPiece) {
+                deselectPiece();
+            } else {
+                selectPiece(scene, clickedPiece);
+            }
+        } else {
+            // 空きマスクリック
+            const file = Math.floor((clickX - boardStartX) / SQUARE_SIZE);
+            const rank = Math.floor((clickY - boardStartY) / SQUARE_SIZE);
+            if (selectedPiece) {
+                movePiece(file, rank);
+            }
         }
     });
 }
-
