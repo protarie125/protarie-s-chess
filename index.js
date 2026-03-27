@@ -1,22 +1,14 @@
 // Phaserゲーム設定
+const isPortrait = window.innerHeight > window.innerWidth;
+
 const config = {
     type: Phaser.AUTO,
     parent: 'game-container',
-    physics: {
-        default: 'arcade',
-        arcade: {
-            gravity: { y: 0 },
-            debug: false
-        }
-    },
     scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
-        width: 1600,
-        height: 900,
-        expandParent: true,
-        fullscreenTarget: 'game-container',
-        resizeInterval: 100
+        width: isPortrait ? 900 : 1600,
+        height: isPortrait ? 1600 : 900,
     },
     scene: {
         create: create,
