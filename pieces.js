@@ -432,6 +432,15 @@ function setupPieceDragEvents(scene) {
                         pieces = pieces.filter(p => p !== targetSquare.piece);
                     }
 
+                    // en passantキャプチャ
+                    if (type === 'P' && targetFile !== file && !targetSquare) {
+                        const capturedSquare = boardState[rank][targetFile];
+                        if (capturedSquare && capturedSquare.type === 'P' && capturedSquare.isBlack !== isBlack) {
+                            capturedSquare.piece.destroy();
+                            pieces = pieces.filter(p => p !== capturedSquare.piece);
+                        }
+                    }
+
                     gameObject.pieceData.file = targetFile;
                     gameObject.pieceData.rank = targetRank;
                     gameObject.x = boardStartX + targetFile * SQUARE_SIZE + SQUARE_SIZE / 2;
@@ -450,6 +459,12 @@ function setupPieceDragEvents(scene) {
                         }
                     }
 
+                    lastMove = {
+                        piece: gameObject,
+                        fromRank: rank,
+                        toRank: targetRank
+                    };
+                    updateBoardState();
                     updateBoardState();
                     isWhiteTurn = !isWhiteTurn;
                     gameObject.pieceData.hasMoved = true;
