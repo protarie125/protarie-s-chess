@@ -422,7 +422,7 @@ function setupPieceDragEvents(scene) {
             targetFile = Phaser.Math.Clamp(targetFile, 0, 7);
             targetRank = Phaser.Math.Clamp(targetRank, 0, 7);
 
-            const { file, rank } = gameObject.pieceData;
+            const { file, rank, type, isBlack } = gameObject.pieceData;
 
             if (file !== targetFile || rank !== targetRank) {
                 if (isMoveLegal(file, rank, targetFile, targetRank, gameObject)) {
@@ -452,7 +452,7 @@ function setupPieceDragEvents(scene) {
 
                     updateBoardState();
                     isWhiteTurn = !isWhiteTurn;
-                    selectedPiece.pieceData.hasMoved = true;
+                    gameObject.pieceData.hasMoved = true;
                 } else {
                     gameObject.x = originalX;
                     gameObject.y = originalY;
