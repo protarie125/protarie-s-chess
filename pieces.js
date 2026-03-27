@@ -284,7 +284,7 @@ function snapPieceToGrid(piece) {
 function selectPiece(scene, piece) {
     if (piece.pieceData.isBlack === isWhiteTurn) return;
 
-    clearHighlights();
+    deselectPiece();
     selectedPiece = piece;
 
     const bgCircle = piece.getByName('background');
