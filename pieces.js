@@ -474,6 +474,11 @@ function setupPieceDragEvents(scene) {
                 }
             }
 
+            if (file === targetFile && rank === targetRank) {
+                gameObject.x = originalX;
+                gameObject.y = originalY;
+            }
+
             draggedPiece = null;
             isDragging = false;
             clearHighlights();
