@@ -13,51 +13,51 @@ let boardStartX, boardStartY;
 function createBoard(scene) {
     const centerX = scene.cameras.main.centerX;
     const centerY = scene.cameras.main.centerY;
-    
+
     boardStartX = centerX - BOARD_PIXEL_SIZE / 2;
     boardStartY = centerY - BOARD_PIXEL_SIZE / 2;
-    
+
     const graphics = scene.make.graphics({ x: 0, y: 0, add: false });
-    
+
     for (let rank = 0; rank < 8; rank++) {
         for (let file = 0; file < 8; file++) {
             const x = file * SQUARE_SIZE;
             const y = rank * SQUARE_SIZE;
-            
+
             const isLight = (rank + file) % 2 === 0;
             const color = isLight ? LIGHT_SQUARE : DARK_SQUARE;
-            
+
             graphics.fillStyle(color);
             graphics.fillRect(x, y, SQUARE_SIZE, SQUARE_SIZE);
             graphics.lineStyle(1, 0x666666, 0.2);
             graphics.strokeRect(x, y, SQUARE_SIZE, SQUARE_SIZE);
         }
     }
-    
+
     graphics.lineStyle(3, 0x666666);
     graphics.strokeRect(0, 0, BOARD_PIXEL_SIZE, BOARD_PIXEL_SIZE);
-    
+
     graphics.generateTexture('boardTexture', BOARD_PIXEL_SIZE, BOARD_PIXEL_SIZE);
     graphics.destroy();
-    
+
     scene.add.image(boardStartX + BOARD_PIXEL_SIZE / 2, boardStartY + BOARD_PIXEL_SIZE / 2, 'boardTexture');
-    
+
     const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
     for (let i = 0; i < 8; i++) {
         const x = boardStartX + i * SQUARE_SIZE + SQUARE_SIZE / 2;
         const y = boardStartY + BOARD_PIXEL_SIZE + LABEL_SIZE / 2;
-        
+
         scene.add.text(x, y, files[i], {
             font: 'bold 16px Arial',
             fill: '#666666',
             align: 'center'
         }).setOrigin(0.5);
     }
-    
+
     for (let i = 0; i < 8; i++) {
         const x = boardStartX - LABEL_SIZE / 2;
         const y = boardStartY + (7 - i) * SQUARE_SIZE + SQUARE_SIZE / 2;
-        
+
         scene.add.text(x, y, (i + 1).toString(), {
             font: 'bold 16px Arial',
             fill: '#666666',

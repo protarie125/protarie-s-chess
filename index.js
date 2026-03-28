@@ -41,7 +41,6 @@ function update() {
 }
 
 async function askStockfish() {
-    return;
     const fen = generateFEN();
     const url = 'https://stockfish.online/api/s/v2.php?fen=' + encodeURIComponent(fen) + '&depth=12';
 
