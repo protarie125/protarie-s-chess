@@ -40,4 +40,17 @@ function create() {
 function update() {
 }
 
-let stockfish = null;
+async function askStockfish() {
+    return;
+    const fen = generateFEN();
+    const url = 'https://stockfish.online/api/s/v2.php?fen=' + encodeURIComponent(fen) + '&depth=12';
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.success && data.bestmove) {
+        const move = data.bestmove.split(' ')[1];
+        console.log('Stockfish move:', data.bestmove);
+        executeStockfishMove(game.scene.scenes[0], move);
+    }
+}

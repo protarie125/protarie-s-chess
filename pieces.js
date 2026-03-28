@@ -304,7 +304,7 @@ function deselectPiece() {
     clearHighlights();
 }
 
-function movePiece(targetFile, targetRank) {
+function movePiece(targetFile, targetRank, scene, isAI = false) {
     if (!selectedPiece) return;
 
     const { file, rank, type, isBlack } = selectedPiece.pieceData;
@@ -318,15 +318,6 @@ function movePiece(targetFile, targetRank) {
     if (targetSquare) {
         targetSquare.piece.destroy();
         pieces = pieces.filter(p => p !== targetSquare.piece);
-    }
-
-    if (type === 'P' && targetFile !== file && !targetSquare) {
-        const direction = isBlack ? 1 : -1;
-        const capturedSquare = boardState[rank][targetFile];
-        if (capturedSquare && capturedSquare.type === 'P' && capturedSquare.isBlack !== isBlack) {
-            capturedSquare.piece.destroy();
-            pieces = pieces.filter(p => p !== capturedSquare.piece);
-        }
     }
 
     selectedPiece.pieceData.file = targetFile;
@@ -346,6 +337,18 @@ function movePiece(targetFile, targetRank) {
             rookSquare.piece.pieceData.hasMoved = true;
             rookSquare.piece.x = boardStartX + rookToFile * SQUARE_SIZE + SQUARE_SIZE / 2;
         }
+    }
+
+    // プロモーション検出
+    if (type === 'P' && (targetRank === 0 || targetRank === 7)) {
+        if (isAI) return;
+        updateBoardState();
+        lastMove = { piece: selectedPiece, fromRank: rank, toRank: targetRank };
+        selectedPiece.pieceData.hasMoved = true;
+        const promotingPiece = selectedPiece;
+        deselectPiece();
+        showPromotionUI(scene, promotingPiece, targetFile, targetRank);
+        return;
     }
 
     updateBoardState();
@@ -468,6 +471,20 @@ function setupPieceDragEvents(scene) {
                         fromRank: rank,
                         toRank: targetRank
                     };
+
+                    // プロモーション検出
+                    if (type === 'P' && (targetRank === 0 || targetRank === 7)) {
+                        updateBoardState();
+                        lastMove = { piece: gameObject, fromRank: rank, toRank: targetRank };
+                        gameObject.pieceData.hasMoved = true;
+                        const promotingPiece = gameObject;
+                        draggedPiece = null;
+                        isDragging = false;
+                        clearHighlights();
+                        showPromotionUI(scene, promotingPiece, targetFile, targetRank);
+                        return;
+                    }
+
                     updateBoardState();
 
                     isWhiteTurn = !isWhiteTurn;
@@ -580,11 +597,11 @@ function generateFEN() {
 }
 
 function executeStockfishMove(scene, move) {
-    // moveは "e2e4" 形式
     const fromFile = move.charCodeAt(0) - 'a'.charCodeAt(0);
     const fromRank = 8 - parseInt(move[1]);
     const toFile = move.charCodeAt(2) - 'a'.charCodeAt(0);
     const toRank = 8 - parseInt(move[3]);
+    const promotionType = move[4] ? move[4].toUpperCase() : null; // 追加
 
     updateBoardState();
 
@@ -593,19 +610,58 @@ function executeStockfishMove(scene, move) {
 
     const piece = fromSquare.piece;
     selectedPiece = piece;
-    movePiece(toFile, toRank);
+    movePiece(toFile, toRank, scene, true);
+
+    // プロモーション処理
+    if (promotionType && piece.pieceData.type === 'P') {
+        piece.pieceData.type = promotionType;
+        const pieceText = piece.getAt(1);
+        pieceText.setText(promotionType);
+        updateBoardState();
+    }
 }
 
-async function askStockfish() {
-    const fen = generateFEN();
-    const url = 'https://stockfish.online/api/s/v2.php?fen=' + encodeURIComponent(fen) + '&depth=12';
+function showPromotionUI(scene, piece, targetFile, targetRank) {
+    const isBlack = piece.pieceData.isBlack;
+    const choices = ['Q', 'R', 'B', 'N'];
+    const uiElements = [];
 
-    const response = await fetch(url);
-    const data = await response.json();
+    // 背景
+    const bg = scene.add.rectangle(
+        scene.cameras.main.centerX,
+        scene.cameras.main.centerY,
+        300, 100,
+        0x000000, 0.8
+    ).setDepth(10);
+    uiElements.push(bg);
 
-    if (data.success && data.bestmove) {
-        const move = data.bestmove.split(' ')[1];
-        console.log('Stockfish move:', data.bestmove);
-        executeStockfishMove(game.scene.scenes[0], move);
-    }
+    choices.forEach((type, i) => {
+        const x = scene.cameras.main.centerX - 150 + i * 75 + 37;
+        const y = scene.cameras.main.centerY;
+
+        const btn = scene.add.circle(x, y, 28, isBlack ? 0x333333 : 0xFFFFFF).setDepth(11);
+        btn.setStrokeStyle(2, 0x000000);
+        uiElements.push(btn);
+
+        const text = scene.add.text(x, y, type, {
+            font: 'bold 32px Arial',
+            fill: isBlack ? '#FFFFFF' : '#000000'
+        }).setOrigin(0.5).setDepth(12);
+        uiElements.push(text);
+
+        btn.setInteractive();
+        btn.on('pointerdown', () => {
+            // UIを消す
+            uiElements.forEach(el => el.destroy());
+
+            // 駒を置き換え
+            piece.pieceData.type = type;
+            const pieceText = piece.getAt(1);
+            pieceText.setText(type);
+
+            updateBoardState();
+            isWhiteTurn = !isWhiteTurn;
+            if (!isWhiteTurn) askStockfish();
+        });
+    });
 }

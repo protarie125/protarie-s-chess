@@ -90,7 +90,7 @@ function setupClickEvents(scene) {
             if (selectedPiece && selectedPiece !== clickedPiece) {
                 // 選択中に別の駒をクリック→相手駒なら移動、自駒なら選択替え
                 const { file, rank } = clickedPiece.pieceData;
-                movePiece(file, rank); // 相手駒なら取る、自駒ならmovePiece内で弾かれる
+                movePiece(file, rank, scene); // 相手駒なら取る、自駒ならmovePiece内で弾かれる
                 if (selectedPiece) { // movePieceで移動できなかった場合は選択替え
                     selectPiece(scene, clickedPiece);
                 }
@@ -104,7 +104,7 @@ function setupClickEvents(scene) {
             const file = Math.floor((clickX - boardStartX) / SQUARE_SIZE);
             const rank = Math.floor((clickY - boardStartY) / SQUARE_SIZE);
             if (selectedPiece) {
-                movePiece(file, rank);
+                movePiece(file, rank, scene);
             }
         }
     });
