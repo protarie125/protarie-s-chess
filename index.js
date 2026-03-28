@@ -41,15 +41,31 @@ function update() {
 }
 
 async function askStockfish() {
+    console.log('FEN:', generateFEN());
+    
     const fen = generateFEN();
-    const url = 'https://stockfish.online/api/s/v2.php?fen=' + encodeURIComponent(fen) + '&depth=12';
+    
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000); // 5秒でタイムアウト
+    
+    try {
+        const response = await fetch('https://chess-api.com/v1', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fen: fen }),
+            signal: controller.signal
+        });
+        clearTimeout(timeout);
+        const data = await response.json();
 
-    const response = await fetch(url);
-    const data = await response.json();
+        console.log('Stockfish response:', data);
 
-    if (data.success && data.bestmove) {
-        const move = data.bestmove.split(' ')[1];
-        console.log('Stockfish move:', data.bestmove);
-        executeStockfishMove(game.scene.scenes[0], move);
+        if (data.move) {
+            console.log('Stockfish move:', data.move);
+            executeStockfishMove(game.scene.scenes[0], data.move);
+        }
+    } catch (e) {
+        clearTimeout(timeout);
+        console.log('Stockfish timeout or error:', e.message);
     }
 }

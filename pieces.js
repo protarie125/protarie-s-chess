@@ -584,8 +584,28 @@ function generateFEN() {
     // 手番
     fen += isWhiteTurn ? ' w' : ' b';
 
-    // キャスリング権（簡易版）
-    fen += ' KQkq';
+    // キャスリング権
+    let castling = '';
+    const whiteKing = pieces.find(p => p.pieceData.type === 'K' && !p.pieceData.isBlack);
+    const blackKing = pieces.find(p => p.pieceData.type === 'K' && p.pieceData.isBlack);
+    const whiteRooks = pieces.filter(p => p.pieceData.type === 'R' && !p.pieceData.isBlack);
+    const blackRooks = pieces.filter(p => p.pieceData.type === 'R' && p.pieceData.isBlack);
+
+    if (whiteKing && !whiteKing.pieceData.hasMoved) {
+        const kingsideRook = whiteRooks.find(r => r.pieceData.file === 7 && r.pieceData.rank === 7);
+        const queensideRook = whiteRooks.find(r => r.pieceData.file === 0 && r.pieceData.rank === 7);
+        if (kingsideRook && !kingsideRook.pieceData.hasMoved) castling += 'K';
+        if (queensideRook && !queensideRook.pieceData.hasMoved) castling += 'Q';
+    }
+    if (blackKing && !blackKing.pieceData.hasMoved) {
+        const kingsideRook = blackRooks.find(r => r.pieceData.file === 7 && r.pieceData.rank === 0);
+        const queensideRook = blackRooks.find(r => r.pieceData.file === 0 && r.pieceData.rank === 0);
+        if (kingsideRook && !kingsideRook.pieceData.hasMoved) castling += 'k';
+        if (queensideRook && !queensideRook.pieceData.hasMoved) castling += 'q';
+    }
+    if (castling === '') castling = '-';
+
+    fen += ' ' + castling;
 
     // en passant
     fen += ' -';
